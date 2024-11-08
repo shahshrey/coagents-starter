@@ -1,6 +1,7 @@
 export interface ContentItem {
   title: string;
   summary: string;
+  id?: string[];
 }
 
 export interface AgentState {
