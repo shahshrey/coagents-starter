@@ -5,25 +5,22 @@ import { CopilotPopup } from "@copilotkit/react-ui";
 import { TextMessage, MessageRole } from "@copilotkit/runtime-client-gql";
 import { CopilotChat } from "@copilotkit/react-ui";
 import { Progress } from "./components/ui/Progress";
-type AgentState = {
-  messages: any[];
-  logs: any[];
-}
+import ContentItems from './components/ContentItems';
+import { AgentState } from "./lib/types";
 
 export function Main() {
   const {
     state: agentState,
-    setState: setTranslateAgentState,
-    run: runTranslateAgent,
   } = useCoAgent<AgentState>({
     name: "translate_agent",
     initialState: { 
-      messages: [{ content: "" }]
+      messages: [{ content: "" }],
+      content_items: []
     },
   });
 
   useCoAgentStateRender({
-    name: "translate_agent",
+    name: "my_agent",
     render: ({ state, nodeName, status }) => {
       if (!state.logs || state.logs.length === 0) {
         return null;
@@ -32,37 +29,23 @@ export function Main() {
     },
   });
 
-
-  console.log("state", agentState);
-
-  const handleTranslate = () => {
-    runTranslateAgent(() => new TextMessage({ role: MessageRole.User, content: "Reply in the best way possible given the data you have. Talk like a pirate." }));
-  };
-
   return (
-    <div className="flex flex-col min-h-screen w-full">
-      <div className="flex-1 flex flex-col items-center justify-center p-4 w-full max-w-7xl mx-auto">
-        <div
-          className="w-[500px] h-full flex-shrink-0"
-          style={
-            {
-              "--copilot-kit-background-color": "#E0E9FD",
-              "--copilot-kit-secondary-color": "#6766FC",
-              "--copilot-kit-secondary-contrast-color": "#FFFFFF",
-              "--copilot-kit-primary-color": "#FFFFFF",
-              "--copilot-kit-contrast-color": "#000000",
-            } as any
-          }
-        >
-          <CopilotChat
-            className="w-full h-[90vh]"
-            instructions={"You are assisting the user as best as you can. Answer in the best way possible given the data you have. Talk like a pirate."}
-            labels={{
-              title: "Your Assistant",
-              initial: "Hi! 👋 How can I assist you today?",
-            }}
-          />
-        </div>
+    <div className="flex h-full w-full">
+      {/* Main content area */}
+      <div className="flex-1 p-4 overflow-y-auto">
+        <ContentItems items={agentState.content_items} />
+      </div>
+      
+      {/* Right sidebar for chat */}
+      <div className="w-120 border-l border-gray-200">
+        <CopilotChat
+          className="h-full"
+          instructions={"You are assisting the user as best as you can. Answer in the best way possible given the data you have. Talk like a pirate."}
+          labels={{
+            title: "Your Assistant",
+            initial: "Hi! 👋 How can I assist you today?",
+          }}
+        />
       </div>
     </div>
   );

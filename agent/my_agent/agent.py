@@ -20,9 +20,6 @@ from bs4 import BeautifulSoup
 from .schema import Log, UserIntentClassification
 from copilotkit.langchain import copilotkit_emit_state
 from pydantic import BaseModel
-from langchain.tools import tool
-from langchain_core.messages import ToolMessage
-import json
 
 
 class ContentItem(BaseModel):
@@ -108,32 +105,11 @@ async def content_router(state: AgentState, config: RunnableConfig) -> Dict[str,
         return {"next_action": "chat_node"}
 
 
-@tool
-def FetchArticle(url: str) -> str:
-    """Fetch article content from a given URL."""
-    return fetch_url_content(url)
-
-@tool
-def SummarizeArticle(title: str, content: str) -> ContentItem:
-    """Summarize an article's content."""
-
-async def fetch_tds_articles(state: AgentState, config: RunnableConfig) -> Dict[str, Any]:
+async def fetch_tds_articles(
+    state: AgentState, config: RunnableConfig
+) -> Dict[str, Any]:
     config = await setup_state_and_config(
         state, config, "Fetching latest articles from towards data science"
-    )
-
-    # Customize config to emit tool calls
-    config = copilotkit_customize_config(
-        config,
-        emit_intermediate_state=[{
-            "state_key": "content_items",
-            "tool": "FetchArticle",
-            "tool_argument": "url",
-        }, {
-            "state_key": "content_items",
-            "tool": "SummarizeArticle",
-            "tool_argument": "content",
-        }],
     )
 
     page_content: Optional[str] = fetch_url_content(
@@ -142,72 +118,29 @@ async def fetch_tds_articles(state: AgentState, config: RunnableConfig) -> Dict[
     if not page_content:
         return {
             "content_items": [],
-            "messages": [AIMessage(content="Could not fetch articles")]
+            "messages": [AIMessage(content="Could not fetch articles")],
         }
 
     content_items: List[ContentItem] = []
     soup: BeautifulSoup = BeautifulSoup(page_content, "html.parser")
-    
     for article in soup.find_all("div", class_="postArticle", limit=5):
         link_tag = article.find("a", {"data-action": "open-post"})
         if not link_tag:
             continue
-
-        title = link_tag.get_text().strip()
-        url = link_tag["href"]
-        
-        # Emit tool call for fetching article - Updated format
-        state["messages"].append(AIMessage(
-            content="",
-            tool_calls=[{
-                "id": f"fetch_{url}",
-                "type": "tool_call",
-                "name": "FetchArticle",
-                "args": {"url": url}
-            }]
-        ))
-        
-        full_content: Optional[str] = parse_article_content(url)
+        full_content: Optional[str] = parse_article_content(link_tag["href"])
         if full_content:
-            state["messages"].append(ToolMessage(
-                tool_call_id=f"fetch_{url}",
-                content=f"Fetched article content from {url}"
-            ))
-            
-            # Emit tool call for summarization - Updated format
-            state["messages"].append(AIMessage(
-                content="",
-                tool_calls=[{
-                    "id": f"summarize_{url}",
-                    "type": "tool_call",
-                    "name": "SummarizeArticle",
-                    "args": {
-                        "title": title,
-                        "content": full_content
-                    }
-                }]
-            ))
-            
             summary = await model.with_structured_output(
                 ContentItem, strict=True
             ).ainvoke(
                 [
                     SystemMessage(
-                        content=f"""Summarize the following article:
-                        Title: {title}
-                        Article: {full_content}
-                        """
+                        content=f""" Summarize the following article:
+                Article: {full_content}
+                """
                     )
                 ]
             )
-            
-            state["messages"].append(ToolMessage(
-                tool_call_id=f"summarize_{url}",
-                content=f"Generated summary for {title}"
-            ))
-            
             content_items.append(summary)
-            await copilotkit_emit_state(config, state)
 
     state["logs"][-1]["done"] = True
     state["content_items"] = content_items
