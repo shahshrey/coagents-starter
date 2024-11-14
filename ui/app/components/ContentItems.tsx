@@ -5,6 +5,7 @@ interface ParsedContent {
   summary: string;
 }
 
+// TODO: This is a temporary solution to parse the content items.
 const ContentItems = ({ items }: { items: ContentItem[] }) => {
   console.log(items);
   const parseContent = (item: ContentItem): ParsedContent => {
