@@ -6,18 +6,27 @@ interface ParsedContent {
 }
 
 const ContentItems = ({ items }: { items: ContentItem[] }) => {
-  const parseContent = (repr: string): ParsedContent => {
+  console.log(items);
+  const parseContent = (item: ContentItem): ParsedContent => {
     try {
-      // Remove the ContentItem wrapper and parse the inner content
-      const cleanedRepr = repr.replace(/^ContentItem\((.*)\)$/, '$1');
-      // Parse the key-value pairs
-      const matches = cleanedRepr.match(/'([^']+)'/g);
-      if (matches && matches.length >= 2) {
-        return {
-          title: matches[0].replace(/'/g, ''),
-          summary: matches[1].replace(/'/g, '')
-        };
+      const patterns = [
+        /ContentItem\(title='([^']*)',\s*summary="([^"]*)"\)/,  // Single quote title, double quote summary
+        /ContentItem\(title='([^']*)',\s*summary='([^']*)'\)/,  // Both single quotes
+        /ContentItem\(title="([^"]*)",\s*summary="([^"]*)"\)/,  // Both double quotes
+        /ContentItem\(title="([^"]*)",\s*summary='([^']*)'\)/   // Double quote title, single quote summary
+      ];
+
+      for (const pattern of patterns) {
+        const match = item.repr.match(pattern);
+        if (match) {
+          return {
+            title: match[1] || 'Unknown Title',
+            summary: match[2] || 'No summary available'
+          };
+        }
       }
+
+      console.warn('No matching pattern found for:', item.repr);
       return { title: 'Unknown Title', summary: 'No summary available' };
     } catch (e) {
       console.error('Error parsing content:', e);
@@ -30,7 +39,7 @@ const ContentItems = ({ items }: { items: ContentItem[] }) => {
       <h2 className="text-xl font-semibold mb-4">Content Items</h2>
       {items && items.length > 0 ? (
         items.map((item, index) => {
-          const { title, summary } = parseContent(item.repr);
+          const { title, summary } = parseContent(item);
           return (
             <div 
               key={index} 
