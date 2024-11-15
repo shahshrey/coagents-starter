@@ -2,24 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
+/* html,
 body {
   height: 100%;
   margin: 0;
   padding: 0;
-}
+} */
 
 /* Ensure the root element and main app container use full height */
-#__next,
+/* #__next,
 main {
   min-height: 100vh;
   height: 100%;
   width: 100%;
-}
+} */
 
 /* Handle mobile viewport height issues */
-@supports (-webkit-touch-callout: none) {
+/* @supports (-webkit-touch-callout: none) {
   .min-h-screen {
     min-height: -webkit-fill-available;
   }
-}
+} */
