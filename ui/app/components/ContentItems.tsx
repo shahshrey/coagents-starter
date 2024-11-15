@@ -119,13 +119,14 @@ const ContentItems = ({ items }: { items: ContentItem[] }) => {
                         </span>
                       ))}
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
+
+                    {/* <div className="flex items-center gap-4 text-sm text-gray-500">
                       <span>{'Foo Baar'}</span>
                       <span>•</span>
                       <span>{new Date().toLocaleDateString()}</span>
                       <span>•</span>
                       <span>{'15 mins'}</span>
-                    </div>
+                    </div> */}
 
                   </div>
                 </div>
